@@ -21,7 +21,8 @@ export const useAuthStore = create<AuthStore>()(
       clearAuth: () => set({ token: null, user: null, isAuthenticated: false }),
       getAuthHeader: () => {
         const token = get().token;
-        return token ? { Authorization: `Bearer ${token}` } : {};
+        if (!token) return {} as Record<string, string>;
+        return { Authorization: `Bearer ${token}` } as Record<string, string>;
       },
     }),
     { name: 'traveloop-auth-store' }
