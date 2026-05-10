@@ -1,7 +1,7 @@
 fastapi
-uvicorn
-pydantic
+uvicorn[standard]
 python-dotenv
 geopy
-asyncio
-requests
+httpx
+google-generativeai
+pydantic

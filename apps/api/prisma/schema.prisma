@@ -3,8 +3,28 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MemberRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum ActivityType {
+  FOOD
+  SIGHTSEEING
+  TRANSPORT
+  ACCOMMODATION
+  CULTURE
+  ADVENTURE
+  WELLNESS
+  NIGHTLIFE
+  NATURE
+  ENTERTAINMENT
+  CUSTOM
 }
 
 model User {
@@ -12,11 +32,14 @@ model User {
   email            String       @unique
   passwordHash     String
   name             String?
-  travelDnaProfile String?
+  avatarUrl        String?
+  travelDnaProfile String?      // JSON: { style, budget, interests[] }
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   trips            TripMember[]
   journals         Journal[]
+
+  @@index([email])
 }
 
 model Trip {
@@ -28,6 +51,9 @@ model Trip {
   startDate   DateTime
   endDate     DateTime
   budgetLimit Float?
+  coverImage  String?
+  theme       String?       // e.g. "anime", "adventure", "luxury"
+  tags        String?       // JSON array of tags
   isPublic    Boolean       @default(false)
   ownerId     String
   createdAt   DateTime      @default(now())
@@ -37,66 +63,129 @@ model Trip {
   expenses    Expense[]
   packingList PackingList?
   journals    Journal[]
+  notifications Notification[]
+
+  @@index([ownerId])
+  @@index([destination])
+  @@index([createdAt])
 }
 
 model TripMember {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   tripId    String
   userId    String
-  role      String   // OWNER, EDITOR, VIEWER
-  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  joinedAt  DateTime @default(now())
+  role      MemberRole @default(VIEWER)
+  trip      Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime   @default(now())
 
   @@unique([tripId, userId])
+  @@index([tripId])
+  @@index([userId])
 }
 
 model ItineraryDay {
   id           String     @id @default(uuid())
   tripId       String
+  dayNumber    Int
   date         DateTime
-  weatherCache String?
+  title        String?
+  weatherCache String?    // JSON: { temp, condition, humidity, icon }
+  notes        String?
   trip         Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
   activities   Activity[]
+
+  @@index([tripId])
 }
 
 model Activity {
   id           String       @id @default(uuid())
   dayId        String
   title        String
-  type         String       // FOOD, SIGHTSEEING, TRANSPORT, etc.
+  description  String?
+  type         ActivityType @default(SIGHTSEEING)
   startTime    DateTime?
   endTime      DateTime?
   locationLat  Float?
   locationLng  Float?
   locationName String?
-  costEstimate Float?
+  costEstimate Float?       @default(0)
+  imageUrl     String?
+  aiNote       String?      // AI-generated tip or insight
+  isAiSuggested Boolean    @default(false)
+  votes        Int          @default(0)
+  order        Int          @default(0)
   day          ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@index([dayId])
+  @@index([order])
 }
 
 model Expense {
-  id       String   @id @default(uuid())
-  tripId   String
-  amount   Float
-  category String
-  date     DateTime
-  trip     Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  tripId      String
+  title       String?
+  amount      Float
+  currency    String   @default("INR")
+  category    String   // Food, Transport, Stay, Activity, Shopping, Other
+  date        DateTime @default(now())
+  receiptUrl  String?
+  addedBy     String?  // userId
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([date])
 }
 
 model PackingList {
   id     String @id @default(uuid())
   tripId String @unique
-  items  String   // JSON stringified Array of { name, isChecked, category }
+  items  String  // JSON: Array<{ id, name, isChecked, category, aiSuggested }>
   trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
 }
 
 model Journal {
-  id      String   @id @default(uuid())
-  tripId  String
-  userId  String
-  notes   String?
-  mood    String?
-  images  String   // JSON stringified URLs
-  trip    Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  tripId    String
+  userId    String
+  dayNumber Int?
+  title     String?
+  notes     String?
+  mood      String?  // happy, excited, tired, adventurous, relaxed
+  images    String   @default("[]") // JSON stringified URLs
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  tripId    String
+  userId    String
+  type      String   // budget_alert, weather_change, collab_join, ai_suggestion
+  message   String
+  isRead    Boolean  @default(false)
+  metadata  String?  // JSON extra data
+  createdAt DateTime @default(now())
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String   // login, create_trip, generate_ai, etc.
+  ipAddress String?
+  userAgent String?
+  metadata  String?  // JSON
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }

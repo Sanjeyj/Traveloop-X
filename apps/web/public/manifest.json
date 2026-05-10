@@ -1,21 +1,45 @@
 {
-  "name": "Traveloop X",
-  "short_name": "Traveloop",
-  "description": "Personalized Travel Planning Operating System",
+  "name": "Traveloop X — AI Travel OS",
+  "short_name": "Traveloop X",
+  "description": "Cinematic AI-powered intelligent travel operating system",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#06b6d4",
+  "orientation": "portrait-primary",
+  "categories": ["travel", "productivity", "lifestyle"],
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/826/826070.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable any"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/826/826070.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Trip",
+      "url": "/?action=new",
+      "description": "Create a new AI-powered trip"
+    },
+    {
+      "name": "Admin",
+      "url": "/admin",
+      "description": "View analytics dashboard"
     }
   ]
 }
