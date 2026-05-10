@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id               String       @id @default(uuid())
+  email            String       @unique
+  passwordHash     String
+  name             String?
+  travelDnaProfile String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  trips            TripMember[]
+  journals         Journal[]
+}
+
+model Trip {
+  id          String        @id @default(uuid())
+  title       String
+  destination String
+  latitude    Float?
+  longitude   Float?
+  startDate   DateTime
+  endDate     DateTime
+  budgetLimit Float?
+  isPublic    Boolean       @default(false)
+  ownerId     String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  members     TripMember[]
+  days        ItineraryDay[]
+  expenses    Expense[]
+  packingList PackingList?
+  journals    Journal[]
+}
+
+model TripMember {
+  id        String   @id @default(uuid())
+  tripId    String
+  userId    String
+  role      String   // OWNER, EDITOR, VIEWER
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime @default(now())
+
+  @@unique([tripId, userId])
+}
+
+model ItineraryDay {
+  id           String     @id @default(uuid())
+  tripId       String
+  date         DateTime
+  weatherCache String?
+  trip         Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  activities   Activity[]
+}
+
+model Activity {
+  id           String       @id @default(uuid())
+  dayId        String
+  title        String
+  type         String       // FOOD, SIGHTSEEING, TRANSPORT, etc.
+  startTime    DateTime?
+  endTime      DateTime?
+  locationLat  Float?
+  locationLng  Float?
+  locationName String?
+  costEstimate Float?
+  day          ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id       String   @id @default(uuid())
+  tripId   String
+  amount   Float
+  category String
+  date     DateTime
+  trip     Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model PackingList {
+  id     String @id @default(uuid())
+  tripId String @unique
+  items  String   // JSON stringified Array of { name, isChecked, category }
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model Journal {
+  id      String   @id @default(uuid())
+  tripId  String
+  userId  String
+  notes   String?
+  mood    String?
+  images  String   // JSON stringified URLs
+  trip    Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
