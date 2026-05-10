@@ -7,7 +7,6 @@ import { useAuthStore } from "@/store/authStore";
 import { useUIStore } from "@/store/uiStore";
 import { Map, Calendar, Wallet, Package, Users, Compass, Book, Loader2, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
 import WeatherWidget from "@/components/WeatherWidget";
 import BudgetAnalytics from "@/components/BudgetAnalytics";
 import AIChatbot from "@/components/AIChatbot";
@@ -52,7 +51,7 @@ export default function TripDashboard({ params }: { params: Promise<{ id: string
   }
 
   const TABS = [
-    { id: "itinerary", icon: <Calendar size={16} />, label: "Itinerary" },
+    { id: "itinerary", icon: <Map size={16} />, label: "Navigation" },
     { id: "budget", icon: <Wallet size={16} />, label: "Budget" },
     { id: "journal", icon: <Book size={16} />, label: "Journal" },
     { id: "packing", icon: <Package size={16} />, label: "Packing List" },
@@ -70,7 +69,7 @@ export default function TripDashboard({ params }: { params: Promise<{ id: string
             </span>
           </div>
           <p className="text-sm text-neutral-400">
-            {new Date(trip.startDate).toLocaleDateString()} – {new Date(trip.endDate).toLocaleDateString()}
+            {trip.startDate && !isNaN(new Date(trip.startDate).getTime()) ? new Date(trip.startDate).toLocaleDateString() : "TBD"} – {trip.endDate && !isNaN(new Date(trip.endDate).getTime()) ? new Date(trip.endDate).toLocaleDateString() : "TBD"}
           </p>
         </div>
 
@@ -131,50 +130,40 @@ export default function TripDashboard({ params }: { params: Promise<{ id: string
                 transition={{ duration: 0.2 }}
               >
                 {activeTab === "itinerary" && (
-                  <div className="flex flex-col gap-8">
-                    {trip.days?.map((day: any) => (
-                      <div key={day.id} className="relative pl-8 border-l border-white/[0.05] pb-8 last:pb-0 last:border-transparent">
-                        <div className="absolute left-[-17px] top-0 w-8 h-8 rounded-full bg-neutral-900 border border-white/[0.1] flex items-center justify-center text-xs font-bold text-neutral-400 shadow-xl">
-                          {day.dayNumber}
-                        </div>
-                        <h3 className="text-xl font-bold mb-4 flex items-center gap-3">
-                          {day.title || `Day ${day.dayNumber}`}
-                          <span className="text-sm font-normal text-neutral-500 px-2.5 py-1 rounded-md bg-white/[0.05] border border-white/[0.05]">
-                            {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                          </span>
-                        </h3>
-                        
-                        <div className="flex flex-col gap-3">
-                          {day.activities?.map((act: any) => (
-                            <div key={act.id} className="group bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 hover:border-cyan-500/30 transition-colors flex gap-4">
-                              <div className="w-12 h-12 rounded-xl bg-white/[0.05] flex items-center justify-center text-neutral-400 shrink-0">
-                                <Compass size={20} />
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex justify-between items-start">
-                                  <h4 className="font-semibold text-lg">{act.title}</h4>
-                                  <span className="text-emerald-400 text-sm font-medium">₹{act.costEstimate || 0}</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-xs text-neutral-500 mt-2">
-                                  <span className="uppercase tracking-wider">{act.type}</span>
-                                  {act.aiNote && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="text-cyan-400 flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded-sm">
-                                        <Sparkles size={10} /> {act.aiNote}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          <button className="py-3 border border-dashed border-white/[0.1] rounded-2xl text-sm text-neutral-500 hover:text-white hover:border-white/[0.3] transition-colors">
-                            + Add Activity
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex flex-col gap-6 h-full">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <Map size={20} className="text-cyan-400" /> Map Navigation
+                      </h2>
+                      <a 
+                        href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(trip.destination || '')}&destination=${encodeURIComponent(trip.destination || '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-sm text-cyan-400 hover:bg-cyan-500/20 transition-colors shadow-lg flex items-center gap-2"
+                      >
+                        Open in Google Maps
+                      </a>
+                    </div>
+                    
+                    <div className="bg-neutral-900 border border-white/[0.06] rounded-2xl overflow-hidden h-[500px] relative shadow-2xl">
+                      <iframe 
+                        width="100%" 
+                        height="100%" 
+                        frameBorder="0" 
+                        style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) contrast(80%)' }}
+                        src={(() => {
+                          const activities = trip.days?.flatMap((d: any) => d.activities?.map((a: any) => `${a.title}, ${trip.destination}`)).filter(Boolean) || [];
+                          if (activities.length >= 2) {
+                            const origin = encodeURIComponent(activities[0]);
+                            const dest = encodeURIComponent(activities[activities.length - 1]);
+                            const waypoints = activities.slice(1, -1).slice(0, 4).map((a: any) => encodeURIComponent(a)).join('+to:');
+                            return `https://maps.google.com/maps?saddr=${origin}&daddr=${waypoints ? waypoints + '+to:' : ''}${dest}&output=embed`;
+                          }
+                          return `https://maps.google.com/maps?q=${encodeURIComponent(trip.destination || 'World')}&output=embed`;
+                        })()}
+                        allowFullScreen
+                      ></iframe>
+                    </div>
                   </div>
                 )}
 
@@ -197,7 +186,7 @@ export default function TripDashboard({ params }: { params: Promise<{ id: string
                       <Package size={20} className="text-cyan-400" /> AI Packing List
                     </h2>
                     {trip.packingList?.items ? (
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid md:grid-cols-2 gap-4 mb-4">
                         {JSON.parse(trip.packingList.items).map((item: any, i: number) => (
                           <div key={i} className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/[0.05]">
                             <div className="w-5 h-5 rounded border border-neutral-600 flex items-center justify-center cursor-pointer hover:border-cyan-500 transition-colors">
@@ -213,8 +202,14 @@ export default function TripDashboard({ params }: { params: Promise<{ id: string
                         ))}
                       </div>
                     ) : (
-                      <p className="text-neutral-500 text-sm">No items added to the packing list yet.</p>
+                      <div className="py-12 flex flex-col items-center justify-center border border-dashed border-white/[0.1] rounded-2xl mb-4">
+                        <Package size={32} className="text-neutral-600 mb-2" />
+                        <p className="text-neutral-500 text-sm">No items added to the packing list yet.</p>
+                      </div>
                     )}
+                    <button className="w-full py-3 border border-dashed border-white/[0.1] rounded-xl text-sm text-neutral-500 hover:text-white hover:border-white/[0.3] transition-colors">
+                      + Add Packing Item
+                    </button>
                   </div>
                 )}
               </motion.div>

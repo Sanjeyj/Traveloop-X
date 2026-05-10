@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Sparkles, MapPin, Wallet, Calendar, Package, CheckCircle, Plane } from "lucide-react";
 
 const AI_URL = process.env.NEXT_PUBLIC_AI_URL || "http://localhost:8000";
@@ -269,64 +269,64 @@ function CinemaContent() {
 
         {/* Live data cards */}
         <div className="w-full grid grid-cols-2 gap-4">
-          <AnimatePresence>
-            {destination && (
-              <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                className="col-span-2 bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 flex items-center gap-4"
-              >
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="text-cyan-400" size={18} />
+          {destination && (
+            <motion.div
+              key="destination-card"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="col-span-2 bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 flex items-center gap-4"
+            >
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                <MapPin className="text-cyan-400" size={18} />
+              </div>
+              <div>
+                <p className="text-[11px] text-neutral-500 uppercase tracking-widest">Destination Locked</p>
+                <p className="font-semibold text-white">{destination.city}, {destination.country}</p>
+              </div>
+              {destination.weather && (
+                <div className="ml-auto text-right">
+                  <p className="text-2xl font-bold text-cyan-400">{destination.weather.temp}°C</p>
+                  <p className="text-[11px] text-neutral-500">{destination.weather.condition}</p>
                 </div>
-                <div>
-                  <p className="text-[11px] text-neutral-500 uppercase tracking-widest">Destination Locked</p>
-                  <p className="font-semibold text-white">{destination.city}, {destination.country}</p>
-                </div>
-                {destination.weather && (
-                  <div className="ml-auto text-right">
-                    <p className="text-2xl font-bold text-cyan-400">{destination.weather.temp}°C</p>
-                    <p className="text-[11px] text-neutral-500">{destination.weather.condition}</p>
-                  </div>
-                )}
-              </motion.div>
-            )}
-            {budget && (
-              <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Wallet className="text-emerald-400" size={16} />
-                  <p className="text-[11px] text-neutral-500 uppercase tracking-widest">Budget</p>
-                </div>
-                <p className="font-bold text-xl text-white">₹{budget.total?.toLocaleString()}</p>
-                <p className="text-xs text-emerald-400 mt-1">Saved ₹{budget.saved?.toLocaleString()}</p>
-              </motion.div>
-            )}
-            {days.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="text-purple-400" size={16} />
-                  <p className="text-[11px] text-neutral-500 uppercase tracking-widest">Itinerary</p>
-                </div>
-                <p className="font-bold text-xl text-white">{days.length} Days</p>
-                <p className="text-xs text-purple-400 mt-1">{days.reduce((sum, d) => sum + (d.activities?.length || 0), 0)} Activities</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </motion.div>
+          )}
+          {budget && (
+            <motion.div
+              key="budget-card"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="text-emerald-400" size={16} />
+                <p className="text-[11px] text-neutral-500 uppercase tracking-widest">Budget</p>
+              </div>
+              <p className="font-bold text-xl text-white">₹{budget.total?.toLocaleString()}</p>
+              <p className="text-xs text-emerald-400 mt-1">Saved ₹{budget.saved?.toLocaleString()}</p>
+            </motion.div>
+          )}
+          {days.length > 0 && (
+            <motion.div
+              key="itinerary-card"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="text-purple-400" size={16} />
+                <p className="text-[11px] text-neutral-500 uppercase tracking-widest">Itinerary</p>
+              </div>
+              <p className="font-bold text-xl text-white">{days.length} Days</p>
+              <p className="text-xs text-purple-400 mt-1">{days.reduce((sum, d) => sum + (d.activities?.length || 0), 0)} Activities</p>
+            </motion.div>
+          )}
         </div>
 
         {/* Activity stream */}
         {days.length > 0 && (
           <div className="w-full flex flex-col gap-2 max-h-48 overflow-hidden">
             <p className="text-[11px] text-neutral-600 uppercase tracking-widest text-center">Live Generation Feed</p>
-            <AnimatePresence>
               {days.slice(-3).map((day, i) => (
                 <motion.div
                   key={`day-${day.day}-${i}`}
@@ -341,7 +341,6 @@ function CinemaContent() {
                   <CheckCircle size={14} className="text-emerald-500 ml-auto flex-shrink-0" />
                 </motion.div>
               ))}
-            </AnimatePresence>
           </div>
         )}
 
